@@ -1,55 +1,71 @@
+//modules
 import express from "express";
 import mongoose from "mongoose";
+
+//pages
+import _MongoDB from "./connection/db.connection.mjs";
 import T from "./model/product.model.mjs";
-import dotenv from "dotenv";
-dotenv.config();
-
 const app = express();
-
 app.use(express.json());
 
-// create a user
+//middleware function
+const connectionTime = (req, res, next) => {
+  req.cTime = Date.now();
+  next();
+};
 
+const time = (req, res, nextInLine) => {
+  const tNow = new Date();
+  const timest = [tNow.getHours(),tNow.getMinutes()]
 
-try{
-    mongoose.connect(process.env.DB)
-    .then(()=>{
-       console.log('DB connected...');
-    })
-    .then(()=>{
-    
-       const db = mongoose.connection;
-       db.on('connected',() => {
-           console.log('DB connected');
-       })
-    
-       db.on('disconnected',() => {
-           console.log('lost connection');
-       })
-    
-       db.on('reconnected',()=>{
-           console.log('connection restored');
-       })
-       
-           app.listen(process.env.PORT, () => {
-             console.log("...rendering on =>", process.env.PORT);
-           });
-    }).catch(err=>{
-    
-        if(err.code=="EREFUSED"){
-               console.log('Error: not connected to the internet. Ensure the system is connected to the internet.');
-               return;
-            }
-            console.log('message =>',err.message);
-       })
+  const hours = timest[0];
+  const minutes = timest[1];
 
-}catch{
-        console.log('the mongoose connection is faulty.');
-}
-
+    (hours>=12)?console.log(`Time: ${hours}:${minutes} pm`):console.log(`Time: ${hours}:${minutes} am`);
+    (minutes<10)?minutes==='0'+minutes:minutes;
   
+  nextInLine();
+};
 
+
+
+const payLoad = (req, res, next) => {
+console.log(typeof res);
+console.log();
+  next();
+};
+
+
+//executing the middleware function
+app.use(payLoad);
+app.use(time);
+// app.use(products);
+
+
+//route handlers
+app.get("/test", (req, res) => {
+  res.send("this is a middleware");
+});
+
+app.get("/api/users", (req, res, moveOn) => {
+  res.json({
+    message: "work in progress",
+  });
+  console.log("user info...");
+});
+
+app.get("/api/product", (req, res, moveOn) => {
+  res.json({
+    message: "work in progress",
+  });
+  console.log("our products are nice");
+});
+
+
+
+_MongoDB().then(()=>{
   
-
-  
-
+  app.listen(process.env.PORT, () => {
+    console.log("...rendering on =>", process.env.PORT);
+  });
+})
